@@ -5,9 +5,13 @@ const app = electron.app
 const BrowserWindow = electron.BrowserWindow
 
 const http = require('http')
+const fs = require('fs')
+const twitterOauth = require('electron-oauth-twitter')
 
 var mainWindow = null
 var loadingWindow = null
+
+var appVersion = JSON.parse(fs.readFileSync(__dirname + '/version.json'))
 
 app.on('window-all-closed', function() {
     if (process.platform !== 'darwin')
@@ -18,6 +22,43 @@ app.on('ready', function() {
     // LoadingWindow
     loadingWindow = new BrowserWindow({width: 250, height: 350, movable: false, frame: false})
     loadingWindow.loadURL('file://' + __dirname + '/lib/html/loading.html')
+
+    // CheckUpdate
+    http.get('https://raw.githubusercontent.com/hideki0403/TwiHigh/master/version.json', (res) => {
+        let body = ''
+        res.setEncoding('utf8')
+
+        res.on('data', (chunk) => {
+            body += chunk
+        })
+
+        res.on('end', (res) => {
+            res = JSON.parse(body)
+            if(appVersion.version !== res.version) {
+                if(res.forced === true) {
+                    // 強制アプデ処理
+                } {
+                    // アップデートお知らせ処理
+                }
+            }
+        })
+    })
+
+    //CheckTokens
+    var twitterTokensAllive = fs.readdirSync(__dirname + '/lib/tokens')
+    if(twitterTokensAllive.length === 0) {
+        const OauthTwitterAccount = new twitterOauth({
+            key: "WW22cp6IEPXzE92porqQxVeXc",
+            secret: " J2VJEi3ia3EesafUkS64GS6B0j9lmXSdIbtp1NpBXUA9BlOLK1",
+        });
+
+        OauthTwitterAccount.startRequest()
+            .then((result) => {
+                dialog.showErrorBox('Status', 'Token: ' + result.oauth_access_token + '\nSecret: ' + result.oauth_access_token_secret)
+            }).catch((error) => {
+                console.error(error, error.stack)
+            })
+    }
 
     loadingWindow.on('closed', function() {
         loadingWindow = null

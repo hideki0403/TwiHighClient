@@ -3,8 +3,9 @@
 const electron = require('electron')
 const app = electron.app
 const BrowserWindow = electron.BrowserWindow
+const dialog = electron.dialog
 
-const http = require('http')
+const https = require('https')
 const fs = require('fs')
 const twitterOauth = require('electron-oauth-twitter')
 
@@ -24,7 +25,7 @@ app.on('ready', function() {
     loadingWindow.loadURL('file://' + __dirname + '/lib/html/loading.html')
 
     // CheckUpdate
-    http.get('https://raw.githubusercontent.com/hideki0403/TwiHigh/master/version.json', (res) => {
+    https.get('https://raw.githubusercontent.com/hideki0403/TwiHigh/master/version.json', (res) => {
         let body = ''
         res.setEncoding('utf8')
 
@@ -49,15 +50,21 @@ app.on('ready', function() {
     if(twitterTokensAllive.length === 0) {
         const OauthTwitterAccount = new twitterOauth({
             key: "WW22cp6IEPXzE92porqQxVeXc",
-            secret: " J2VJEi3ia3EesafUkS64GS6B0j9lmXSdIbtp1NpBXUA9BlOLK1",
-        });
+            secret: "J2VJEi3ia3EesafUkS64GS6B0j9lmXSdIbtp1NpBXUA9BlOLK1",
+        })
 
         OauthTwitterAccount.startRequest()
             .then((result) => {
-                dialog.showErrorBox('Status', 'Token: ' + result.oauth_access_token + '\nSecret: ' + result.oauth_access_token_secret)
+                fs.writeFileSync(__dirname + '/lib/tokens/tmp.json', result)
             }).catch((error) => {
                 console.error(error, error.stack)
+                dialog.showMessageBox({type: 'info', message: '認証エラーです。終了します。'}, function() {
+                    loadingWindow = null
+                })
             })
+    } else {
+        // tokenがあった場合の処理
+        
     }
 
     loadingWindow.on('closed', function() {

@@ -21,8 +21,8 @@
         <div id='logs' class='grey-text'>
           <h8>起動準備中...</h8>
         </div>
-        <div class='footerLoading'>
-          <h8 class='right-align grey-text text-darken-2'>@hideki_0403 Ver.1.0　<i class="material-icons tiny right-align" onClick="alert('にゃーん')">insert_emoticon</i></h8>
+        <div id='info' class='footerLoading'>
+          <h8 class='right-align grey-text text-darken-2'>Version.1.0.0<i class="material-icons tiny right-align" onClick="alert('にゃーん')">insert_emoticon</i></h8>
         </div>
     </div>
     <!-- Script系読み込み -->
@@ -31,17 +31,20 @@
     </script>
     <script src="js/materialize.js"></script>
     <script src="js/init.js"></script>
+    <script src="js/loadCss.js"></script>
+    <script>
+      const __config = JSON.parse(fs.readFileSync(__dirname + '/lib/settings/config.conf'))
+      const __themeInfo = JSON.parse(fs.readFileSync(__dirname + '/theme/' + __config.theme + '/infomation.themepack'))
+      $('#info').append('<h8 class="right-align grey-text text-darken-2"><p href="' + __themeInfo.url + '">' + __themeInfo.author + '(' + __themeInfo.twitter + ')</p>')
+    </script>
     <!-- IPC通信 -->
     <script>
-      const ipc = require('ipc')
-      window.onload = function () {
-        $('#logs').append('<br>ok')
-      }
-
-      ipcRenderer.on('asynchronous-message', (msg) => {
+      var ipcRenderer = require('electron').ipcRenderer
+      ipcRenderer.on('log', (event, msg) => {
         $('#logs').append('<br><h8>' + msg + '</h8>')
       })
     </script>
+
 
 </body>
 

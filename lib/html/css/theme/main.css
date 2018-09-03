@@ -1,0 +1,63 @@
+.main_background {
+  background-color: #455A64
+}
+
+.tweet_normal {
+    position: relative;
+    margin: 2em 0;
+    padding: 0.5em 1em;
+    border: solid 3px #95ccff;
+    border-radius: 8px;
+}
+.tweet_normal .box-title {
+    position: absolute;
+    display: inline-block;
+    top: -13px;
+    left: 10px;
+    padding: 0 9px;
+    line-height: 1;
+    font-size: 19px;
+    background-color: #455A64;
+    color: #4DD0E1;
+    font-weight: bold;
+}
+.tweet_normal p {
+    margin: 0;
+    padding: 0;
+}
+
+.tweet_rt {
+    position: relative;
+    margin: 2em 0;
+    padding: 0.5em 1em;
+    border: solid 3px #AED581;
+    border-radius: 8px;
+}
+.tweet_rt .box-title {
+    position: absolute;
+    display: inline-block;
+    top: -13px;
+    left: 10px;
+    padding: 0 9px;
+    line-height: 1;
+    font-size: 19px;
+    background-color: #455A64;
+    color: #8BC34A;
+    font-weight: bold;
+}
+.tweet_rt p {
+    margin: 0;
+    padding: 0;
+}
+
+.tweet-box{
+    padding: 0.5em 1em;
+    margin: 2em 0;
+    background: -webkit-repeating-linear-gradient(-45deg, #f0f8ff, #f0f8ff 3px,#e9f4ff 3px, #e9f4ff 7px);
+    background: repeating-linear-gradient(-45deg, #f0f8ff, #f0f8ff 3px,#e9f4ff 3px, #e9f4ff 7px);
+}
+.tweet-box p {
+    color: #455A64;
+    margin: 0;
+    padding: 0;
+}

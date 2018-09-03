@@ -57,5 +57,6 @@ typings/
 # dotenv environment variables file
 .env
 
-# token files
+# token files etc...
 lib/tokens/
+lib/datas/

@@ -16,6 +16,24 @@ const __config = JSON.parse(fs.readFileSync(__dirname + '/lib/settings/config.co
 var mainWindow = null
 var loadingWindow = null
 
+function isExistDir(dir) {
+  try {
+    fs.readDir(dir)
+    return true
+  } catch(err) {
+    if(err.code === 'ENOENT') return false
+  }
+}
+
+function alliveSystemDir(dirname) {
+  if(isExistDir(__dirname + dirname) === false) {
+    fs.mkdirSync(__dirname + dirname)
+  }
+}
+
+alliveSystemDir('/lib/tokens')
+alliveSystemDir('/lib/datas')
+
 
 var appVersion = JSON.parse(fs.readFileSync(__dirname + '/version.json'))
 
@@ -154,28 +172,119 @@ app.on('ready', function() {
                 var Minutes = DD.getMinutes()
                 var listF = JSON.parse(fs.readFileSync(__dirname + '/lib/datas/followList-' + nativeID + '.json'))
                 if(listF.date !== Hours + '/' + Minutes) {
-                  client.get('friends/ids', {user_id: nativeID, count: 5000, stringify_ids: true}, function(error2, tweets2, response2) {
+                  client.get('friends/ids', {user_id: nativeID, count: 700}, function(error2, tweets2, response2) {
                     var followsList = {
                       date: Hours + '/' + Minutes,
                       follows: tweets2.ids
                     }
                     fs.writeFileSync(__dirname + '/lib/datas/followList-' + nativeID + '.json', JSON.stringify(followsList, null, ''))
                   })
+                  client.get('account/verify_credentials', function(error, tweets, response) {
+                    var accountDataTMP = {
+                      name: tweets.name,
+                      id: tweets.screen_name,
+                      icon: tweets.profile_image_url,
+                      color: tweets.profile_link_color
+                    }
+                    setTimeout(function() {
+                      mainWindow.webContents.send('accountData', accountDataTMP)
+                    }, 2000)
+
+                  })
                 }
               }
 
               var Follist = JSON.parse(fs.readFileSync(__dirname + '/lib/datas/followList-' + nativeID + '.json'))
+              var FlistJ = Follist.follows.join(',')
+
+
 
               //Stream接続
               //Follist.follows
-              client.stream('statuses/filter', {follow: ["882600562239315969","839185547729907712"]}, function(stream) {
+              client.stream('statuses/filter', {follow: FlistJ}, function(stream) {
                 stream.on('data', function(event) {
-                  console.log(event)
+                  var imgBox = null
+                  var videoBox = null
+
+                  // media追加
+                  if(event.extended_entities !== undefined) {
+                    for(var i = 0; event.extended_entities.media.length > i; i++) {
+                      if(event.extended_entities.media[i].video_info !== undefined) {
+                        var VIDEOBOX = []
+                        for(var n = 0; event.extended_entities.media[i].video_info.variants.length > n; n++) {
+                          if(event.extended_entities.media[i].video_info.variants[n].bitrate !== undefined) {
+                            VIDEOBOX.push(event.extended_entities.media[i].video_info.variants[n].bitrate)
+                          }
+                        }
+                        var videoBox = event.extended_entities.media[i].video_info.variants[VIDEOBOX.indexOf(Math.max.apply(null, VIDEOBOX))].url
+                      } else {
+                        //画像だった場合
+                        var imgBox = event.extended_entities.media
+                      }
+                    }
+                  }
+
+
+
+                  var DTTT = {
+                    id: event.id_str,
+                    img: imgBox,
+                    video: videoBox,
+                    ev: event
+                  }
+                    mainWindow.webContents.send('stream', DTTT)
+
                 })
 
                 stream.on('error', function(error) {
                   throw error
                 })
+              })
+
+              // IPC通信@受信
+              ipc.on('ipcTwitter', function(event, msg) {
+                var Tid = String(msg.id)
+                console.log(Tid)
+                switch(msg.status) {
+                  case 'favorite':
+                    //ふぁぼ
+                    client.post('favorites/create', {id: Tid},  function(error, tweet, response) {
+                      if(error) {
+                        mainWindow.webContents.send('ipcTwitter-reply', 'エラー: ' + error.message + '(' + error.code + ')')
+                      } else {
+                        mainWindow.webContents.send('ipcTwitter-reply', 'いいねしました: ' + tweet.text)
+                      }
+                    })
+                    break
+                  case 'retweet':
+                    //RT
+                    client.post('statuses/retweet', {id: Tid},  function(error, tweet, response) {
+                      if(error) {
+                        mainWindow.webContents.send('ipcTwitter-reply', 'エラー: ' + error.message + '(' + error.code + ')')
+                      } else {
+                        mainWindow.webContents.send('ipcTwitter-reply', 'RTしました: ' + tweet.text)
+                      }
+                    })
+                    break
+                  case 'favrt':
+                    //ふぁぼりつ
+                    client.post('favorites/create', {id: Tid},  function(error, tweet, response) {
+                      if(error) {
+                        mainWindow.webContents.send('ipcTwitter-reply', 'エラー: ' + error.message + '(' + error.code + ')')
+                      } else {
+                        mainWindow.webContents.send('ipcTwitter-reply', 'いいねしました: ' + tweet.text)
+                      }
+                    })
+                    client.post('statuses/retweet', {id: Tid},  function(error, tweet, response) {
+                      if(error) {
+                        mainWindow.webContents.send('ipcTwitter-reply', 'エラー: ' + error.message + '(' + error.code + ')')
+                      } else {
+                        mainWindow.webContents.send('ipcTwitter-reply', 'RTしました: ' + tweet.text)
+                      }
+                    })
+                      mainWindow.webContents.send('ipcTwitter-reply', 'ふぁぼりつしました')
+                    break
+                }
               })
 
 
@@ -191,11 +300,18 @@ app.on('ready', function() {
 
 })
 
+
+
 // menu
 var template = [
   {
     label: '設定',
-  }
+    submenu: [
+      {role: '更新確認'},
+      {role: 'アカウント追加'},
+      {role: 'About'}
+    ]
+  } , { label: 'Toggle DevTools', accelerator: 'Alt+Command+I', click: function() { BrowserWindow.getFocusedWindow().toggleDevTools(); } }
 ]
 
 var menu = Menu.buildFromTemplate(template)

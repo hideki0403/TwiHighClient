@@ -68,6 +68,7 @@ app.on('ready', function() {
                       // 強制アプデ処理
                   } {
                       // アップデートお知らせ処理
+                      loadingWindow.webContents.send('log', '新しいバージョンが存在します。<br>Ver.' + res.version)
                   }
               } else {
                 // アプデが存在しなかった場合

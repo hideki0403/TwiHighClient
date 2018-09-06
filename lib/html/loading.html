@@ -21,7 +21,7 @@
           <h8>起動準備中...</h8>
         </div>
         <div id='info' class='footerLoading'>
-          <h8 class='right-align grey-text text-darken-2'>Version.1.0.0<i class="material-icons tiny right-align" onClick="alert('にゃーん')">insert_emoticon</i></h8>
+
         </div>
     </div>
     <!-- Script系読み込み -->
@@ -41,6 +41,9 @@
       var ipcRenderer = require('electron').ipcRenderer
       ipcRenderer.on('log', (event, msg) => {
         $('#logs').append('<br><h8>' + msg + '</h8>')
+      })
+      ipcRenderer.on('version', (event, msg) => {
+        $('#info').append('<h8 class=\'right-align grey-text text-darken-2\'>Version.' + msg + '<i class="material-icons tiny right-align" onClick="alert(\'にゃーん\')">insert_emoticon</i></h8>')
       })
     </script>
 

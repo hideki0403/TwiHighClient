@@ -63,6 +63,7 @@ app.on('ready', function() {
 
     loadingWindow.webContents.on('did-finish-load', () => {
       loadingWindow.show()
+      loadingWindow.webContents.send('version', appVersion.version)
 
       // CheckUpdate
       https.get('https://raw.githubusercontent.com/hideki0403/TwiHigh/master/version.json', (res) => {
@@ -81,7 +82,7 @@ app.on('ready', function() {
                       // 強制アプデ処理
                   } {
                       // アップデートお知らせ処理
-                      loadingWindow.webContents.send('log', 'アップデート確認完了...<br>アップデートがあります<br>' + appVersion.version + ' -> ' + res.version)
+                      loadingWindow.webContents.send('log', 'アップデート確認完了...<br>アップデートがあります<br>' + appVersion.version + ' -> ' + res.version + '<br>更新内容: ' + res.message)
                   }
               } else {
                 // アプデが存在しなかった場合
@@ -156,13 +157,13 @@ app.on('ready', function() {
 
                     setTimeout(function() {
                       // メインウインドウ起動
-                      mainWindow = new BrowserWindow({width: 1080, height: 720, show: false})
+                      mainWindow = new BrowserWindow({width: 1080, height: 720, show: false, backgroundColor: '#4FC3F7'})
                       mainWindow.loadURL('file://' + __dirname + '/lib/html/index.html')
                       Menu.setApplicationMenu(menu)
                       mainWindow.once('ready-to-show', () => {
                         mainWindow.show()
                       })
-            //          loadingWindow.close()
+                      loadingWindow.close()
 
                       // FastTweetウインドウ起動準備
                       fastTweet = new BrowserWindow({width: 350, height: 310, frame: false, transparent: true, show: false, resizable: false})

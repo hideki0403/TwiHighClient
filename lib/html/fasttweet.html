@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TwiHigh</title>
+
+    <!-- CSS読み込み  -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="css/materialize.css" type="text/css" rel="stylesheet" media="screen,projection" />
+    <link href="css/style.css" type="text/css" rel="stylesheet" media="screen,projection" />
+    <link href="css/theme/main.css" type="text/css" rel="stylesheet" media="screen,projection" />
+    <link href="css/twihigh_style.css" type="text/css" rel="stylesheet" media="screen,projection" />
+
+</head>
+
+<body class='sub_background'>
+    <div class='fast-tweet-box tweet-box'>
+      <i class="material-icons tiny" onClick="closeWindow()">clear</i>
+      <i class="material-icons tiny" onClick="onTop()">expand_less</i>
+      <i class="material-icons tiny drag-window">pan_tool</i>
+      <form name="tweet_box" action="" id="tweet_box">
+        <textarea name="Tweet" placeholder="いまどうしてる？" type="text" value="" class="textarea-twihigh" id="tweet_text"></textarea>
+      </form>
+      <hr />
+      <button class="btn waves-effect waves-light blue btn-small right-align" type="submit" name="action" onClick="tweetToTwitter()">Tweet
+        <i class="material-icons right">send</i>
+      </button>
+      <button class="btn-floating waves-effect waves-light blue btn-small" type="submit" name="action"><i class="material-icons right">add_a_photo</i></button>
+  </div>
+    <!-- Script系読み込み -->
+    <script>
+      window.jQuery = window.$ = require('jquery')
+    </script>
+    <script src="js/materialize.js"></script>
+    <script src="js/shortcut.js"></script>
+    <script src="js/init.js"></script>
+    <script src="js/loadCss.js"></script>
+
+    <script>
+      var ipcRenderer = require('electron').ipcRenderer
+
+      ipcRenderer.on('ipcTwitter-reply-child', (event, data) => {
+        M.toast({html: data})
+      })
+
+      function tweetToTwitter() {
+        var tweetDataSet = {
+          text: document.forms.tweet_box.tweet_text.value,
+          media: null
+        }
+        ipcRenderer.send('ipcTwitterTweet', tweetDataSet)
+        $('#tweet_text').val('')
+      }
+
+      function closeWindow() {
+        ipcRenderer.send('systemCtl', 'closeFastWindow')
+      }
+
+      function onTop() {
+        ipcRenderer.send('systemCtl', 'onTopFastWindow')
+      }
+    </script>
+
+    <script>
+      //ShortCutKeys
+      shortcut('Ctrl+Down',function() {
+      	//緊急離脱モード
+        ipcRenderer.send('systemCtl', 'closeFastWindow')
+      })
+
+      shortcut('Ctrl+Enter', function() {
+        //ツイート
+        tweetToTwitter()
+      })
+    </script>
+
+</body>
+
+</html>

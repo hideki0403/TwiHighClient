@@ -4,7 +4,7 @@
   "description": "",
   "main": "main.js",
   "dependencies": {
-    "discord-rich-presence": "^0.0.7",
+    "discord-rich-presence": "0.0.7",
     "electron-oauth-twitter": "^1.2.0",
     "twitter": "^1.7.1"
   },

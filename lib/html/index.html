@@ -24,7 +24,9 @@
           </div>
         </div>
         <div class='tweet-box'>
-          <textarea class="textarea-twihigh"></textarea>
+          <form name="tweet_box" action="" id="tweet_box">
+            <textarea name="Tweet" placeholder="いまどうしてる？" type="text" value="" class="textarea-twihigh" id="tweet_text"></textarea>
+          </form>
           <hr />
           <button class="btn waves-effect waves-light blue btn-small right-align" type="submit" name="action" onClick="tweetToTwitter()">Tweet
             <i class="material-icons right">send</i>
@@ -52,6 +54,7 @@
       window.jQuery = window.$ = require('jquery')
     </script>
     <script src="js/materialize.js"></script>
+    <script src="js/shortcut.js"></script>
     <script src="js/init.js"></script>
     <script src="js/loadCss.js"></script>
     <!-- materialize -->
@@ -62,6 +65,7 @@
     </script>
     <!-- IPC通信 -->
     <script>
+      var electron = require('electron')
       var ipcRenderer = require('electron').ipcRenderer
       var i = 0
       var t = 0
@@ -134,8 +138,26 @@
       }
 
       function tweetToTwitter() {
-
+        var tweetDataSet = {
+          text: document.forms.tweet_box.tweet_text.value,
+          media: null
+        }
+        ipcRenderer.send('ipcTwitterTweet', tweetDataSet)
+        $('#tweet_text').val('')
       }
+    </script>
+
+    <script>
+      //ShortCutKeys
+      shortcut('Ctrl+Down',function() {
+      	//緊急離脱モード
+        ipcRenderer.send('systemCtl', 'hideWindow')
+      })
+
+      shortcut('Ctrl+Enter', function() {
+        //ツイート
+        tweetToTwitter()
+      })
     </script>
 
 </body>

@@ -1,5 +1,5 @@
 @echo off
-echo ƒL[‚ð‰Ÿ‚·‚Æ‚±‚ÌƒfƒBƒŒƒNƒgƒŠ‚ÉTwiHigh‰¼ŽÀs‚É•K—v‚ÈNode.jsƒ‰ƒCƒuƒ‰ƒŠ‚ð\¬‚µ‚Ü‚·B
-echo ‚È‚¨Aˆê•”‚Ìƒ‰ƒCƒuƒ‰ƒŠ‚ÌƒCƒ“ƒXƒg[ƒ‹‚É‚Ígit‚ð•K—v‚Æ‚µ‚Ü‚·Bgit‚ªƒCƒ“ƒXƒg[ƒ‹‚³‚ê‚Ä‚¢‚È‚¢ƒpƒ\ƒRƒ“‚ÅŽÀs‚³‚ê‚½ê‡‚Í³í‚Éƒ‰ƒCƒuƒ‰ƒŠ\¬‚ðs‚¦‚È‚¢‰Â”\«‚ª‚ ‚è‚Ü‚·B
+echo ï¿½Lï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ‚ï¿½ï¿½Ìƒfï¿½Bï¿½ï¿½ï¿½Nï¿½gï¿½ï¿½ï¿½ï¿½TwiHighï¿½ï¿½ï¿½ï¿½ï¿½sï¿½É•Kï¿½vï¿½ï¿½Node.jsï¿½ï¿½ï¿½Cï¿½uï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\ï¿½ï¿½ï¿½ï¿½ï¿½Ü‚ï¿½ï¿½B
+echo ï¿½È‚ï¿½ï¿½Aï¿½ê•”ï¿½Ìƒï¿½ï¿½Cï¿½uï¿½ï¿½ï¿½ï¿½ï¿½ÌƒCï¿½ï¿½ï¿½Xï¿½gï¿½[ï¿½ï¿½ï¿½É‚ï¿½gitï¿½ï¿½ï¿½Kï¿½vï¿½Æ‚ï¿½ï¿½Ü‚ï¿½ï¿½Bgitï¿½ï¿½ï¿½Cï¿½ï¿½ï¿½Xï¿½gï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½È‚ï¿½ï¿½pï¿½\ï¿½Rï¿½ï¿½ï¿½ÅŽï¿½ï¿½sï¿½ï¿½ï¿½ê‚½ï¿½ê‡ï¿½Íï¿½ï¿½ï¿½ï¿½Éƒï¿½ï¿½Cï¿½uï¿½ï¿½ï¿½ï¿½ï¿½\ï¿½ï¿½ï¿½ï¿½ï¿½sï¿½ï¿½ï¿½È‚ï¿½ï¿½Â”\ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ü‚ï¿½ï¿½B
 PAUSE
-npm i -save twitter electron electron-oauth-twitter discord-rich-presence
+npm i -save twitter electron electron-oauth-twitter discord-rich-presence date-utils

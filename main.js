@@ -19,24 +19,128 @@ var loadingWindow = null
 var fastTweet = null
 var tray = null
 
-function isExistDir(dir) {
-  try {
-    fs.readDir(dir)
-    return true
-  } catch(err) {
-    if(err.code === 'ENOENT') return false
+function isExist(type, name) {
+  if(type === 'file') {
+    try {
+      fs.statSync(name)
+      return true
+    } catch(err) {
+      if(err.code === 'ENOENT') return false
+    }
+  } else {
+    try {
+      fs.readDirSync(name)
+      return true
+    } catch(err) {
+      if(err.code === 'ENOENT') return false
+    }
   }
 }
 
-function alliveSystemDir(dirname) {
-  if(isExistDir(__dirname + dirname) === false) {
-    fs.mkdirSync(__dirname + dirname)
+function alliveSystem(type, name, msg) {
+  if(isExist(type, __dirname + name) === false) {
+    if(type === 'dir') {
+      fs.mkdirSync(__dirname + name)
+    } else {
+      fs.writeFileSync(__dirname + name, msg)
+    }
   }
 }
 
-alliveSystemDir('/lib/tokens')
-alliveSystemDir('/lib/datas')
+alliveSystem('dir', '/lib/tokens')
+alliveSystem('dir', '/lib/datas')
 
+
+var lvs = [
+    50,150,300,500,750, //5
+    1100,1550,2100,2750,3500, //10
+    4400,5450,6650,8000,9500, //15
+    11200,13100,15200,17500,20000, //20
+    22750,25750,29000,32500,36250, //25
+    40300,44650,49300,54250,59500, //30
+    65100,71050,77350,84000,91000, //35
+    98400,106200,114400,123000,132000, //40
+    141450,151350,161700,172500,183750, //45
+    195500,207750,220500,233750,247500, //50
+    261800,276650,292050,308000,324500, //55
+    341600,359300,377600,396500,416000, //60
+    436150,456950,478400,500500,523250, //65
+    546700,570850,595700,621250,647500, //70
+    674500,702250,730750,760000,790000, //75
+    820800,852400,884800,918000,952000, //80
+    986850,1022550,1059100,1096500,1134750, //85
+    1173900,1213950,1254900,1296750,1339500, //90
+    1383200,1427850,1473450,1520000,1567500, //95
+    1616000,1665500,1716000,1767500,1820000, //100
+    1873550,1928150,1983800,2040500,2098250, //105
+    2157100,2217050,2278100,2340250,2403500, //110
+    2467900,2533450,2600150,2668000,2737000, //115
+    2807200,2878600,2951200,3025000,3100000 //120
+]
+
+function levelSystem(type, id) {
+    var accountNAME = fs.readFileSync(__dirname + '/lib/datas/accountData-' + id + '.json')
+    var cExp = fs.readFileSync(__dirname + '/lib/datas/lvData-' + id + '.json')
+    if(type === 'tweet') {
+      var min = 30
+      var max = 50
+      var nExp = Math.floor( Math.random() * (max + 1 - min) ) + min
+      var lvMes = 'ツイートをした！'
+    } else if(type === 'favrt') {
+      var min = 20
+      var max = 60
+      var nExp = Math.floor( Math.random() * (max + 1 - min) ) + min
+      var lvMes = 'ふぁぼりつをした！'
+    } else if(type === 'favorite') {
+      var min = 10
+      var max = 30
+      var nExp = Math.floor( Math.random() * (max + 1 - min) ) + min
+      var lvMes = 'いいねをした！'
+    } else {
+      var min = 10
+      var max = 40
+      var nExp = Math.floor( Math.random() * (max + 1 - min) ) + min
+      var lvMes = 'RTをした！'
+    }
+
+    for(var i = 0; lvs.length > i; i++) {
+      if(cExp < lvs[i]) {
+        var nowdLv = i + 1
+        break
+      }
+    }
+
+    var nowExp = parseInt(cExp) + parseInt(nExp)
+    fs.writeFileSync(__dirname + '/lib/datas/lvData-' + id + '.json', nowExp)
+    for(var i = 0; lvs.length > i; i++) {
+      if(nowExp < lvs[i]) {
+        var nowLv = i + 1
+        break
+      }
+    }
+
+    if(nowLv > nowdLv) {
+      var lvUpMes = "<div class='yellow-text'>ランクアップ！</div>"
+    } else {
+      var lvUpMes = null
+    }
+
+    var leaveExp = lvs[nowLv - 1] - lvs[nowLv - 2]
+    var nowExpEdi = nowExp - lvs[nowLv - 2]
+    var percentage = Math.round((nowExpEdi / leaveExp) * 100)
+    var matome = {
+      name: accountNAME,
+      nowExp: nowExpEdi,
+      nowLv: nowLv,
+      leaveExp: leaveExp,
+      percentage: percentage,
+      message: lvMes,
+      getExp: nExp,
+      lvUpMes: lvUpMes
+    }
+
+    mainWindow.webContents.send('twiLV', matome)
+}
 
 var appVersion = JSON.parse(fs.readFileSync(__dirname + '/version.json'))
 
@@ -175,6 +279,24 @@ app.on('ready', function() {
 
                       var nativeID = logIn.replace('.json', '')
 
+                      // LvConf生成
+                      alliveSystem('file', '/lib/datas/lvData-' + nativeID + '.json', 0)
+                      alliveSystem('file', '/lib/datas/accountData-' + nativeID + '.json', '')
+
+                      // Lv初期生成
+                      var nowExp = fs.readFileSync(__dirname + '/lib/datas/lvData-' + nativeID + '.json')
+
+                      for(var i = 0; lvs.length > i; i++) {
+                        if(nowExp < lvs[i]) {
+                          var nowLv = i + 1
+                          break
+                        }
+                      }
+
+                      var leaveExp = lvs[nowLv - 1] - lvs[nowLv - 2]
+                      var nowExpEdi = nowExp - lvs[nowLv - 2]
+                      var percentage = Math.round((nowExpEdi / leaveExp) * 100)
+
                       // Client生成
                       var client = new Twitter({
                         consumer_key: 'WW22cp6IEPXzE92porqQxVeXc',
@@ -198,11 +320,16 @@ app.on('ready', function() {
                             fs.writeFileSync(__dirname + '/lib/datas/followList-' + nativeID + '.json', JSON.stringify(followsList, null, ''))
                           })
                           client.get('account/verify_credentials', function(error, tweets, response) {
+                            fs.writeFileSync(__dirname + '/lib/datas/accountData-' + nativeID + '.json', tweets.name)
                             var accountDataTMP = {
                               name: tweets.name,
                               id: tweets.screen_name,
                               icon: tweets.profile_image_url,
-                              color: tweets.profile_link_color
+                              color: tweets.profile_link_color,
+                              nowExp: nowExpEdi,
+                              nowLv: nowLv,
+                              leaveExp: leaveExp,
+                              percentage: percentage
                             }
                             setTimeout(function() {
                               mainWindow.webContents.send('accountData', accountDataTMP)
@@ -261,6 +388,7 @@ app.on('ready', function() {
 
                       // IPC通信@tweet
                       ipc.on('ipcTwitterTweet', function(event, data) {
+                        levelSystem('tweet', nativeID)
                         var tweetText = data.text
                         if(data.media !== null) {
                           //Media追加処理
@@ -268,8 +396,8 @@ app.on('ready', function() {
 
                         client.post('statuses/update', {status: tweetText}, function(error, tweet, response) {
                           if(error) {
-                            mainWindow.webContents.send('ipcTwitter-reply', 'エラー: ' + error.message + '(' + error.code + ')')
-                            fastTweet.webContents.send('ipcTwitter-reply-child', 'エラー: ' + error.message + '(' + error.code + ')')
+                            mainWindow.webContents.send('ipcTwitter-reply', 'エラー: ' + error[0].message + '(' + error[0].code + ')')
+                            fastTweet.webContents.send('ipcTwitter-reply-child', 'エラー: ' + error[0].message + '(' + error[0].code + ')')
                           } else {
                             mainWindow.webContents.send('ipcTwitter-reply', 'ツイートしました！')
                             fastTweet.webContents.send('ipcTwitter-reply-child', 'ツイートしました！')
@@ -296,14 +424,16 @@ app.on('ready', function() {
 
                       // IPC通信@ふぁぼりつ受信
                       ipc.on('ipcTwitter', function(event, msg) {
+
                         var Tid = String(msg.id)
                         console.log(Tid)
                         switch(msg.status) {
                           case 'favorite':
                             //ふぁぼ
+                            levelSystem('favorite', nativeID)
                             client.post('favorites/create', {id: Tid},  function(error, tweet, response) {
                               if(error) {
-                                mainWindow.webContents.send('ipcTwitter-reply', 'エラー: ' + error.message + '(' + error.code + ')')
+                                mainWindow.webContents.send('ipcTwitter-reply', 'エラー: ' + error[0].message + '(' + error[0].code + ')')
                               } else {
                                 mainWindow.webContents.send('ipcTwitter-reply', 'いいねしました: ' + tweet.text)
                               }
@@ -311,9 +441,10 @@ app.on('ready', function() {
                             break
                           case 'retweet':
                             //RT
+                            levelSystem('retweet', nativeID)
                             client.post('statuses/retweet', {id: Tid},  function(error, tweet, response) {
                               if(error) {
-                                mainWindow.webContents.send('ipcTwitter-reply', 'エラー: ' + error.message + '(' + error.code + ')')
+                                mainWindow.webContents.send('ipcTwitter-reply', 'エラー: ' + error[0].message + '(' + error[0].code + ')')
                               } else {
                                 mainWindow.webContents.send('ipcTwitter-reply', 'RTしました: ' + tweet.text)
                               }
@@ -321,16 +452,17 @@ app.on('ready', function() {
                             break
                           case 'favrt':
                             //ふぁぼりつ
+                            levelSystem('favrt', nativeID)
                             client.post('favorites/create', {id: Tid},  function(error, tweet, response) {
                               if(error) {
-                                mainWindow.webContents.send('ipcTwitter-reply', 'エラー: ' + error.message + '(' + error.code + ')')
+                                mainWindow.webContents.send('ipcTwitter-reply', 'エラー: ' + error[0].message + '(' + error[0].code + ')')
                               } else {
                                 mainWindow.webContents.send('ipcTwitter-reply', 'いいねしました: ' + tweet.text)
                               }
                             })
                             client.post('statuses/retweet', {id: Tid},  function(error, tweet, response) {
                               if(error) {
-                                mainWindow.webContents.send('ipcTwitter-reply', 'エラー: ' + error.message + '(' + error.code + ')')
+                                mainWindow.webContents.send('ipcTwitter-reply', 'エラー: ' + error[0].message + '(' + error[0].code + ')')
                               } else {
                                 mainWindow.webContents.send('ipcTwitter-reply', 'RTしました: ' + tweet.text)
                               }

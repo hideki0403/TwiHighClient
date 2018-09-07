@@ -20,7 +20,7 @@
       <div class="col s4">
         <!-- LeftContents -->
         <div class="account">
-          <div id="accountBox" class="row" >
+          <div id="accountBox">
           </div>
         </div>
         <div class='tweet-box'>
@@ -35,9 +35,11 @@
         </div>
 
         <div id="levelBox" class="level-box">
-          勇者 hideki0403 [LV:1/EXP:325]
-          <hr />
-          いいねをした！32EXP獲得！
+          <div id="lvBoxMain"></div>
+          <div class="progress-level">
+              <div id="lvBoxProgress" class="lv-determinate" style="width: 0%"></div>
+          </div>
+          <div id="lvBoxLog"></div>
         </div>
       </div>
       <div class="col s8">
@@ -121,8 +123,8 @@
       })
 
       ipcRenderer.on('accountData', (event, data) => {
-        $('#accountBox').append('<div class="col s3"><img src="' + data.icon + '" class="circle responsive-img"></div>')
-        $('#accountBox').append('<div class="col s9"><p>' + data.name + '</p></div>')
+        $('#accountBox').prepend('<img src="' + data.icon + '">' + data.name)
+        twiLv('setUP', data)
       })
 
       ipcRenderer.on('ipcTwitter-reply', (event, data) => {
@@ -132,6 +134,28 @@
           M.toast({html: '<div class="toast-success">' + data + '</div>'})
         }
       })
+
+      ipcRenderer.on('twiLV', (event, data) => {
+
+        twiLv('normal', data)
+        console.log(data)
+      })
+
+      function twiLv(meth, data) {
+        if(meth === 'setUP') {
+          $('#lvBoxProgress').css('width', data.percentage + '%')
+          $('#lvBoxMain').empty()
+          $('#lvBoxMain').append(data.name + ' [Lv:' + data.nowLv + '] [EXP: ' + data.nowExp + '/' + data.leaveExp + ']')
+        } else {
+          $('#lvBoxProgress').css('width', data.percentage + '%')
+          $('#lvBoxLog').prepend(data.message + data.getExp + 'EXP獲得！' + '<br>')
+          if(data.lvUpMes !== null) {
+            $('#lvBoxLog').prepend(data.lvUpMes + '<br>' + ' Lv<span class="blue-text text-lighten-1">' + (data.nowLv - 1) + '</span> -> Lv<span class="blue-text text-lighten-1">' + data.nowLv + '</span><br><br>')
+          }
+          $('#lvBoxMain').empty()
+          $('#lvBoxMain').append(data.name + ' [Lv:' + data.nowLv + '] [EXP: ' + data.nowExp + '/' + data.leaveExp + ']')
+        }
+      }
 
       function ipcTwitter(status, recieveID) {
         ipcRenderer.send('ipcTwitter', {status: status, id: recieveID})

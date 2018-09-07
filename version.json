@@ -1,5 +1,5 @@
 {
-    "version": "1.2.0",
+    "version": "1.4.0",
     "forced": "false",
-    "message": "DiscordRPC追加、FastTweet追加"
+    "message": "Level機能実装"
 }

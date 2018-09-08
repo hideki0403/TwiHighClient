@@ -43,12 +43,19 @@
         </div>
       </div>
       <div class="col s8">
-        <button class="btn waves-effect waves-light red btn-small" type="submit" name="action" onClick="$('#timeline').empty()">TL Clear
-          <i class="material-icons right">clear</i>
-        </button>
-        <span id="tweetsBadge" class="new badge" data-badge-caption="tweets/s">0</span>
         <!-- TL -->
-        <div id="timeline"></div>
+        <ul class="tabs grey darken-3 blue-text">
+          <li class="tab col s6"><a class="active" href="#timeline-wrap">Timeline</a><span class="new badge" id="timeline-newbadge">0</span></li>
+          <li class="tab col s6"><a href="#mentions">Mentions</a><span class="new badge" id="mentions-newbadge">0</span></li>
+        </ul>
+        <div id="timeline-wrap">
+          <div id="timeline"></div>
+        </div>
+        <div id="mentions">
+          <div class="container">
+            <p class="center-align">まだ新規リプライ/@ツイートは届いていません。</p>
+          </div>
+        </div>
     </div>
   </div>
     <!-- Script系読み込み -->
@@ -64,6 +71,9 @@
       $(document).ready(function(){
         $('.materialboxed').materialbox()
       })
+      $(document).ready(function(){
+        $('.tabs').tabs()
+      })
     </script>
     <!-- IPC通信 -->
     <script>
@@ -71,6 +81,7 @@
       var ipcRenderer = require('electron').ipcRenderer
       var i = 0
       var t = 0
+      var tweetIdBox = []
       setInterval(function() {
         t++
         var result = (Math.round(i / t * 10000)) / 10000
@@ -82,11 +93,31 @@
         var tweet = MData.ev
         var TTid = MData.id
         var image = MData.img
+        tweetIdBox.push(tweet.id_str)
+
+        if(tweetIdBox.length > 100) {
+          $('#twiId-' + tweetIdBox[0]).remove()
+          tweetIdBox.shift()
+        }
 
         if(tweet.text.match(/RT/)) {
-          $('#timeline').prepend('<div class="tweet_rt"><span class="box-title">' + tweet.user.name + ' (@' + tweet.user.screen_name + ')</span><p id="addMedia-' + tweet.id_str + '">' + tweet.text + '</p><p class="via_charactor">' + tweet.source + '</p></div>')
+          $('#timeline').prepend('<div class="tweet_rt" id="twiId-' + tweet.id_str +  '"><span class="box-title">' + tweet.retweeted_status.user.name + ' (@' + tweet.retweeted_status.user.screen_name + ')</span><p class="retweet_status">' + tweet.user.name + ' (@' + tweet.user.screen_name + ')さんがリツイート</p><p id="addMedia-' + tweet.id_str + '">' + tweet.retweeted_status.text + '</p><p class="via_charactor">' + tweet.source + '</p><hr /><i class="material-icons tiny" id="' + tweet.id_str + '-fav">favorite</i>いいね(' + tweet.retweeted_status.favorite_count + ')&emsp;<i class="material-icons tiny" id="' + tweet.id_str + '-rt">repeat</i>リツイート(' + tweet.retweeted_status.retweet_count + ')&emsp;<i class="material-icons tiny" id="' + tweet.id_str + '-favrt">grade</i>ふぁぼりつ</div>')
+          $('#' + tweet.id_str + '-fav').click(function(){
+            ipcTwitter('favorite', tweet.id_str)
+          })
+          $('#' + tweet.id_str + '-rt').click(function(){
+            ipcTwitter('retweet', tweet.id_str)
+          })
+          $('#' + tweet.id_str + '-favrt').click(function(){
+            ipcTwitter('favrt', tweet.id_str)
+          })
         } else {
-          $('#timeline').prepend('<div class="tweet_normal"><span class="box-title">' + tweet.user.name + ' (@' + tweet.user.screen_name + ')</span><p id="addMedia-' + tweet.id_str + '">' + tweet.text + '</p><p class="via_charactor">' + tweet.source + '</p><hr /><i class="material-icons tiny" id="' + tweet.id_str + '-fav">favorite</i>いいね　<i class="material-icons tiny" id="' + tweet.id_str + '-rt">repeat</i>リツイート　<i class="material-icons tiny" id="' + tweet.id_str + '-favrt">grade</i>ふぁぼりつ</div>')
+          if(tweet.in_reply_to_screen_name !== null) {
+            var replyStat = '<p>@' + tweet.in_reply_to_screen_name + 'さんに返信</p>'
+          } else {
+            var replyStat = ''
+          }
+          $('#timeline').prepend('<div class="tweet_normal" id="twiId-' + tweet.id_str +  '"><span class="box-title">' + tweet.user.name + ' (@' + tweet.user.screen_name + ')</span><div class="reply_status">' + replyStat + '</div><p id="addMedia-' + tweet.id_str + '">' + tweet.text + '</p><p class="via_charactor">' + tweet.source + '</p><hr /><i class="material-icons tiny" id="' + tweet.id_str + '-fav">favorite</i>いいね&emsp;<i class="material-icons tiny" id="' + tweet.id_str + '-rt">repeat</i>リツイート&emsp;<i class="material-icons tiny" id="' + tweet.id_str + '-favrt">grade</i>ふぁぼりつ</div>')
           $('#' + tweet.id_str + '-fav').click(function(){
             ipcTwitter('favorite', tweet.id_str)
           })
@@ -136,16 +167,27 @@
       })
 
       ipcRenderer.on('twiLV', (event, data) => {
-
         twiLv('normal', data)
-        console.log(data)
+      })
+
+      var repCounter = 0
+      ipcRenderer.on('getReply', (event, tweet) => {
+        if(repCounter === 0) {
+          repCounter++
+          $('#mentions').empty()
+        }
+        $('#mentions').prepend('<div class="replyBox" id="twiId-' + tweet.id_str +  '"><span class="box-title">' + tweet.user.name + ' (@' + tweet.user.screen_name + ')</span><p id="addMedia-' + tweet.id_str + '">' + tweet.text + '</p><p class="via_charactor">' + tweet.source + '</p><hr /><i class="material-icons tiny" id="' + tweet.id_str + '-fav">favorite</i>いいね&emsp;<i class="material-icons tiny" id="' + tweet.id_str + '-rt">repeat</i>リツイート&emsp;<i class="material-icons tiny" id="' + tweet.id_str + '-favrt">grade</i>ふぁぼりつ</div>')
+        var myNotification = new Notification('TwiHigh: ' + tweet.user.name + '(@' + tweet.user.screen_name + ')', {
+            body: tweet.text
+          })
+
       })
 
       function twiLv(meth, data) {
         if(meth === 'setUP') {
           $('#lvBoxProgress').css('width', data.percentage + '%')
           $('#lvBoxMain').empty()
-          $('#lvBoxMain').append(data.name + ' [Lv:' + data.nowLv + '] [EXP: ' + data.nowExp + '/' + data.leaveExp + ']')
+          $('#lvBoxMain').append(data.name + ' [Lv: ' + data.nowLv + '] [EXP: ' + data.nowExp + '/' + data.leaveExp + ']')
         } else {
           $('#lvBoxProgress').css('width', data.percentage + '%')
           $('#lvBoxLog').prepend(data.message + data.getExp + 'EXP獲得！' + '<br>')
@@ -153,7 +195,7 @@
             $('#lvBoxLog').prepend(data.lvUpMes + '<br>' + ' Lv<span class="blue-text text-lighten-1">' + (data.nowLv - 1) + '</span> -> Lv<span class="blue-text text-lighten-1">' + data.nowLv + '</span><br><br>')
           }
           $('#lvBoxMain').empty()
-          $('#lvBoxMain').append(data.name + ' [Lv:' + data.nowLv + '] [EXP: ' + data.nowExp + '/' + data.leaveExp + ']')
+          $('#lvBoxMain').append(data.name + ' [Lv: ' + data.nowLv + '] [EXP: ' + data.nowExp + '/' + data.leaveExp + ']')
         }
       }
 
@@ -161,13 +203,24 @@
         ipcRenderer.send('ipcTwitter', {status: status, id: recieveID})
       }
 
-      function tweetToTwitter() {
+      function tweetToTwitter(reply) {
+        if(reply === '') {
+          var twiReply = null
+        } else {
+          var twiReply = reply
+        }
+
         var tweetDataSet = {
           text: document.forms.tweet_box.tweet_text.value,
-          media: null
+          media: null,
+          reply: twiReply
         }
         ipcRenderer.send('ipcTwitterTweet', tweetDataSet)
         $('#tweet_text').val('')
+      }
+
+      function createReply(id) {
+
       }
     </script>
 

@@ -7,16 +7,20 @@ const dialog = electron.dialog
 const ipc = electron.ipcMain
 const Menu = electron.Menu
 const Tray = electron.Tray
+const clipboard = electron.clipboard
+const Notification = electron.Notification
 
 const https = require('https')
 const fs = require('fs')
 const Twitter = require('twitter')
 const twitterOauth = require('electron-oauth-twitter')
+const notifier = require('node-notifier')
 const __config = JSON.parse(fs.readFileSync(__dirname + '/lib/settings/config.conf'))
 
 var mainWindow = null
 var loadingWindow = null
 var fastTweet = null
+var notificationWindow = null
 var tray = null
 
 function isExist(type, name) {
@@ -96,11 +100,16 @@ function levelSystem(type, id) {
       var max = 30
       var nExp = Math.floor( Math.random() * (max + 1 - min) ) + min
       var lvMes = 'いいねをした！'
-    } else {
+    } else if(type === 'retweet') {
       var min = 10
       var max = 40
       var nExp = Math.floor( Math.random() * (max + 1 - min) ) + min
       var lvMes = 'RTをした！'
+    } else {
+      var min = 20
+      var max = 40
+      var nExp = Math.floor( Math.random() * (max + 1 - min) ) + min
+      var lvMes = 'TL垂れ流しボーナス！'
     }
 
     for(var i = 0; lvs.length > i; i++) {
@@ -147,22 +156,24 @@ var appVersion = JSON.parse(fs.readFileSync(__dirname + '/version.json'))
 var logIn = null
 
 app.on('window-all-closed', function() {
-    if (process.platform !== 'darwin')
-        app.quit
+  if (process.platform !== 'darwin')
+      app.quit()
 })
 
 app.on('ready', function() {
     // CreateTray
     tray = new Tray(__dirname + '/lib/assets/twihigh.ico')
     const contextMenu = Menu.buildFromTemplate([
-      {label: '開く', click: function() {mainWindow.show()}},
-      {label: 'FastTweet', click: function() {fastTweet.show()}}
+      {label: 'TwiHighを開く', click: function() {mainWindow.show()}},
+      {label: 'FastTweet', click: function() {fastTweet.show()}},
+      {label: '再起動', click: function() {app.relaunch();app.quit()}},
+      {label: '終了', click: function() {app.quit()}}
     ])
     tray.setToolTip('TwiHigh Ver.' + appVersion.version)
     tray.setContextMenu(contextMenu)
 
     // LoadingWindow
-    loadingWindow = new BrowserWindow({width: 250, height: 350, movable: false, frame: false})
+    loadingWindow = new BrowserWindow({width: 250, height: 350, movable: false, frame: false, icon: __dirname + '/lib/assets/twihigh.ico'})
     loadingWindow.loadURL('file://' + __dirname + '/lib/html/loading.html')
 
     loadingWindow.webContents.on('did-finish-load', () => {
@@ -180,7 +191,6 @@ app.on('ready', function() {
 
           res.on('end', (res) => {
               res = JSON.parse(body)
-              console.log(res)
               if(appVersion.version !== res.version) {
                   if(res.forced === true) {
                       // 強制アプデ処理
@@ -242,7 +252,7 @@ app.on('ready', function() {
                     client.get('account/verify_credentials', function(error, tweets, response) {
                       if(error) { return error }
                       fs.renameSync(__dirname + '/lib/tokens/tmp.json', __dirname + '/lib/tokens/' + tweets.id + '.json')
-                      client.get('friends/ids', {user_id: tweets.id, count: 5000}, function(error2, tweets2, response2) {
+                      client.get('friends/ids', {user_id: tweets.id, count: 700}, function(error2, tweets2, response2) {
                         loadingWindow.webContents.send('log', '情報取得完了...アカウント名: @' + tweets.screen_name + '<br>フォロー数: ' + tweets2.ids.length + '<br>アプリを再起動します。')
                         var followsList = {
                           date: Hours + '/' + Minutes,
@@ -259,19 +269,30 @@ app.on('ready', function() {
                   } else {
                     loadingWindow.webContents.send('log', '起動準備完了...メインウインドウを起動します。')
 
-                    setTimeout(function() {
                       // メインウインドウ起動
-                      mainWindow = new BrowserWindow({width: 1080, height: 720, show: false, backgroundColor: '#4FC3F7'})
+                      mainWindow = new BrowserWindow({width: 1080, height: 720, show: false, backgroundColor: '#4FC3F7', icon: __dirname + '/lib/assets/twihigh.ico'})
                       mainWindow.loadURL('file://' + __dirname + '/lib/html/index.html')
                       Menu.setApplicationMenu(menu)
                       mainWindow.once('ready-to-show', () => {
                         mainWindow.show()
+                        loadingWindow.close()
                       })
-                      loadingWindow.close()
 
                       // FastTweetウインドウ起動準備
-                      fastTweet = new BrowserWindow({width: 350, height: 310, frame: false, transparent: true, show: false, resizable: false})
+                      fastTweet = new BrowserWindow({width: 350, height: 310, frame: false, transparent: true, show: false, resizable: false, icon: __dirname + '/lib/assets/twihigh.ico'})
                       fastTweet.loadURL('file://' + __dirname + '/lib/html/fasttweet.html')
+
+                      // Notificationウインドウ起動準備
+                    //  var NotificationWidth = window.parent.screen.width - 100
+                    //  var NotificationHeight = window.parent.screen.height - 100
+                      notificationWindow = new BrowserWindow({width: 400, height: 150, x: 20, y: 20, frame: false, transparent: true, show: false, resizable: false, alwaysOnTop: true, skipTaskbar: true})
+                      notificationWindow.loadURL('file://' + __dirname + '/lib/html/notification.html')
+                      notificationWindow.webContents.on('did-finish-load', () => {
+                        notificationWindow.show()
+                        setTimeout(function() {
+                          notificationWindow.hide()
+                        }, 3000)
+                      })
 
                       // ログイン指定。本来はconfigから取得！
                       var logIn = twitterTokensAllive[0]
@@ -312,11 +333,12 @@ app.on('ready', function() {
                         var Minutes = DD.getMinutes()
                         var listF = JSON.parse(fs.readFileSync(__dirname + '/lib/datas/followList-' + nativeID + '.json'))
                         if(listF.date !== Hours + '/' + Minutes) {
-                          client.get('friends/ids', {user_id: nativeID, count: 700}, function(error2, tweets2, response2) {
+                          client.get('friends/ids', {user_id: nativeID}, function(error2, tweets2, response2) {
                             var followsList = {
                               date: Hours + '/' + Minutes,
                               follows: tweets2.ids
                             }
+
                             fs.writeFileSync(__dirname + '/lib/datas/followList-' + nativeID + '.json', JSON.stringify(followsList, null, ''))
                           })
                           client.get('account/verify_credentials', function(error, tweets, response) {
@@ -334,57 +356,94 @@ app.on('ready', function() {
                             setTimeout(function() {
                               mainWindow.webContents.send('accountData', accountDataTMP)
                             }, 2000)
-
                           })
                         }
                       }
 
-                      var Follist = JSON.parse(fs.readFileSync(__dirname + '/lib/datas/followList-' + nativeID + '.json'))
-                      var FlistJ = Follist.follows.join(',')
+                      // ReplyData更新
+                      client.get('statuses/mentions_timeline', {count: 1}, function(error, tweets, response) {
+                        fs.writeFileSync(__dirname + '/lib/datas/mentionsData-' + nativeID + '.json', tweets[0].id_str)
+                      })
 
-
-
-                      //Stream接続
-                      //Follist.follows
-                      client.stream('statuses/filter', {follow: FlistJ}, function(stream) {
-                        stream.on('data', function(event) {
-                          var imgBox = null
-                          var videoBox = null
-
-                          // media追加
-                          if(event.extended_entities !== undefined) {
-                            for(var i = 0; event.extended_entities.media.length > i; i++) {
-                              if(event.extended_entities.media[i].video_info !== undefined) {
-                                var VIDEOBOX = []
-                                for(var n = 0; event.extended_entities.media[i].video_info.variants.length > n; n++) {
-                                  if(event.extended_entities.media[i].video_info.variants[n].bitrate !== undefined) {
-                                    VIDEOBOX.push(event.extended_entities.media[i].video_info.variants[n].bitrate)
-                                  }
-                                }
-                                var videoBox = event.extended_entities.media[i].video_info.variants[VIDEOBOX.indexOf(Math.max.apply(null, VIDEOBOX))].url
-                              } else {
-                                //画像だった場合
-                                var imgBox = event.extended_entities.media
+                      // ReplyData受け取り
+                      setInterval(function() {
+                        var lastReply = fs.readFileSync(__dirname + '/lib/datas/mentionsData-' + nativeID + '.json')
+                        client.get('statuses/mentions_timeline', {since_id: lastReply}, function(error, tweets, response) {
+                          if(tweets.length !== 0) {
+                            fs.writeFileSync(__dirname + '/lib/datas/mentionsData-' + nativeID + '.json', tweets[tweets.length - 1].id_str)
+                            for(var i = 0; tweets.length > i; i++) {
+                              var twiContents = tweets[tweets.length - 1 - i]
+                              var notificationContents = {
+                                head: twiContents.user.name + '(@' + twiContents.user.screen_name + ') さんからリプライが届いています' ,
+                                body: twiContents.text
                               }
+                              notificationWindow.show()
+                              notificationWindow.webContents.send('notification-child', notificationContents)
+                              mainWindow.webContents.send('getReply', twiContents)
+                              setTimeout(function() {
+                                notificationWindow.hide()
+                              }, 10000)
                             }
                           }
+                        })
+                      }, 15000)
 
+                        var Follist = JSON.parse(fs.readFileSync(__dirname + '/lib/datas/followList-' + nativeID + '.json'))
+                        var flisBox = []
+                        if(Follist.follows.length > 700) {
+                          var upperLength = 700
+                        } else {
+                          var upperLength = Follist.follows.length
+                        }
+                        for(var i = 0; upperLength > i; i++) {
+                          flisBox.push(Follist.follows[i])
+                        }
+                        var FlistJ = flisBox.join(',')
 
+                        //Stream接続
+                        //Follist.follows
+                        client.stream('statuses/filter', {follow: FlistJ}, function(stream) {
+                          stream.on('data', function(event) {
+                            if(Follist.follows.indexOf(event.user.id) !== -1) {
+                              if(Math.floor(Math.random() * 100) + 1 > 95) {
+                                levelSystem('bounus', nativeID)
+                              }
+                              var imgBox = null
+                              var videoBox = null
 
-                          var DTTT = {
-                            id: event.id_str,
-                            img: imgBox,
-                            video: videoBox,
-                            ev: event
-                          }
-                            mainWindow.webContents.send('stream', DTTT)
+                              // media追加
+                              if(event.extended_entities !== undefined) {
+                                for(var i = 0; event.extended_entities.media.length > i; i++) {
+                                  if(event.extended_entities.media[i].video_info !== undefined) {
+                                    var VIDEOBOX = []
+                                    for(var n = 0; event.extended_entities.media[i].video_info.variants.length > n; n++) {
+                                      if(event.extended_entities.media[i].video_info.variants[n].bitrate !== undefined) {
+                                        VIDEOBOX.push(event.extended_entities.media[i].video_info.variants[n].bitrate)
+                                      }
+                                    }
+                                    var videoBox = event.extended_entities.media[i].video_info.variants[VIDEOBOX.indexOf(Math.max.apply(null, VIDEOBOX))].url
+                                  } else {
+                                    //画像だった場合
+                                    var imgBox = event.extended_entities.media
+                                  }
+                                }
+                              }
 
+                              var DTTT = {
+                                id: event.id_str,
+                                img: imgBox,
+                                video: videoBox,
+                                ev: event
+                              }
+                                mainWindow.webContents.send('stream', DTTT)
+                              }
+                            })
+
+                          stream.on('error', function(error) {
+                            throw error
+                          })
                         })
 
-                        stream.on('error', function(error) {
-                          throw error
-                        })
-                      })
 
                       // IPC通信@tweet
                       ipc.on('ipcTwitterTweet', function(event, data) {
@@ -472,8 +531,6 @@ app.on('ready', function() {
                         }
                       })
 
-
-                    }, 2000)
                   }
               }
           })

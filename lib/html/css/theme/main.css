@@ -11,6 +11,30 @@
 	background: rgba(0, 0, 0, 0);
 }
 
+.notification_background {
+	background: rgba(38, 50, 56, 0.8);
+	border: solid 3px rgba(0, 0, 0, 0);
+	border-radius: 8px;
+  width: 95%;
+  margin-right: auto;
+  margin-left : auto;
+}
+
+.notification_background .title {
+	font-size: medium;
+	color: #64b5f6;
+}
+
+.notification_background .body {
+	font-size: small;
+	color: #FFF;
+}
+
+.notification_background img {
+	width: 70%;
+	height: 70%;
+}
+
 .drag-window {
 	-webkit-app-region: drag;
 }
@@ -37,7 +61,7 @@
     left: 10px;
     padding: 0 9px;
     line-height: 1;
-    font-size: 19px;
+    font-size: 15px;
     background-color: #2c2f33;
     color: #4DD0E1;
     font-weight: bold;
@@ -72,7 +96,7 @@
     left: 10px;
     padding: 0 9px;
     line-height: 1;
-    font-size: 19px;
+    font-size: 15px;
     background-color: #2c2f33;
     color: #8BC34A;
     font-weight: bold;
@@ -88,6 +112,51 @@
     border-style: dashed;
     border-color: #AED581;
     height: 1px;
+}
+
+.replyBox {
+    position: relative;
+    margin: 2em 0;
+    padding: 0.5em 1em;
+    border: solid 3px #95ccff;
+    border-radius: 8px;
+		-webkit-transition: all 1s;
+	  -webkit-transform: translate(0, 0);
+	  opacity: 1;
+}
+.replyBox .box-title {
+    position: absolute;
+    display: inline-block;
+    top: -13px;
+    left: 10px;
+    padding: 0 9px;
+    line-height: 1;
+    font-size: 15px;
+    background-color: #2c2f33;
+    color: #4DD0E1;
+    font-weight: bold;
+		text-overflow: ellipsis;
+}
+.replyBox p {
+    margin: 0;
+    padding: 0;
+}
+
+.replyBox hr {
+    border-width: 2px 0px 0px 0px;
+    border-style: dashed;
+    border-color: #95ccff;
+    height: 1px;
+}
+
+.retweet_status {
+		font-size: small;
+		color: #95ccff;
+}
+
+.reply_status {
+		font-size: small;
+		color: #AED581;
 }
 
 .via_charactor {
@@ -244,4 +313,17 @@ video {
   background-color: #FFF;
   -webkit-transition: width .3s linear;
   transition: width .3s linear;
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  border-radius: 25px;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 25px;
+	background: #212121;
 }

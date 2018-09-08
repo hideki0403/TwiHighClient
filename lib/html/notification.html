@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TwiHigh</title>
+
+    <!-- CSS読み込み  -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="css/materialize.css" type="text/css" rel="stylesheet" media="screen,projection" />
+    <link href="css/style.css" type="text/css" rel="stylesheet" media="screen,projection" />
+    <link href="css/theme/main.css" type="text/css" rel="stylesheet" media="screen,projection" />
+    <link href="css/twihigh_style.css" type="text/css" rel="stylesheet" media="screen,projection" />
+
+</head>
+
+<body>
+    <div class='notification_background' id='main_container'>
+      <img src="assets/logo_clear.png">
+      <div class="container">
+        <div class="title"><span class="blue-text">TwiHigh</span> メンション通知サービス</div>
+      </div>
+    </div>
+    <!-- Script系読み込み -->
+    <script>
+      window.jQuery = window.$ = require('jquery')
+    </script>
+    <script src="js/materialize.js"></script>
+    <script src="js/shortcut.js"></script>
+    <script src="js/init.js"></script>
+    <script src="js/loadCss.js"></script>
+
+    <script>
+      var ipcRenderer = require('electron').ipcRenderer
+      ipcRenderer.on('notification-child', (event, data) => {
+        $('#main_container').empty()
+        $('#main_container').append('<div class="title">' + data.head + '</div><div class="body">' + data.body + '</div>')
+      })
+    </script>
+
+    <script>
+      //ShortCutKeys
+      shortcut('Ctrl+Down',function() {
+      	//緊急離脱モード
+        ipcRenderer.send('systemCtl', 'closeFastWindow')
+      })
+    </script>
+
+</body>
+
+</html>

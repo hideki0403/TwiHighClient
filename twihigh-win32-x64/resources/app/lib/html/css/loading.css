@@ -1,0 +1,8 @@
+.footerLoading {
+ position: absolute;
+ bottom: 15px
+}
+
+img {
+  max-width: 230px;
+}

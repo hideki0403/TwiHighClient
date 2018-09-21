@@ -32,6 +32,7 @@
             <i class="material-icons right">send</i>
           </button>
           <button class="btn-floating waves-effect waves-light blue btn-small" type="submit" name="action"><i class="material-icons right">add_a_photo</i></button>
+          <button class="btn-floating waves-effect waves-light blue btn-small" type="submit" name="action" onClick="tweetToTwitter('nyan')">🐈</button>
         </div>
 
         <div id="levelBox" class="level-box">
@@ -204,11 +205,24 @@
         ipcRenderer.send('ipcTwitter', {status: status, id: recieveID})
       }
 
+      var nyaaaaan = ['にゃーん', 'こにゃーん', 'にゃんにゃーん', 'ふみゃー...', 'みゃぁ！', 'みゃんみゃん', 'みゃーん', 'こみゃーん', 'うにゃぁ！', 'ふみゃぁ...', 'みゃっ！？', 'みゃんみー', 'みゃぁ♪']
+
       function tweetToTwitter(reply) {
         if(reply === '') {
           var twiReply = null
         } else {
           var twiReply = reply
+        }
+
+        if(reply === 'nyan') {
+          // 場を和ませる（？）にゃーん機能
+          var tweetDataSet = {
+            text: nyaaaaan[Math.floor(Math.random() * nyaaaaan.length)],
+            media: null,
+            reply: twiReply
+          }
+          ipcRenderer.send('ipcTwitterTweet', tweetDataSet)
+          return //関数から抜けるにはreturnを使えってじっちゃが言ってた
         }
 
         var tweetDataSet = {
